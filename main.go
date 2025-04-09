@@ -2,19 +2,23 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/samirhembrom/blogaggregator/internal/config"
 )
 
 func main() {
-	jsonData, err := config.Read()
+	cfg, err := config.Read()
 	if err != nil {
-		fmt.Printf("err")
+		log.Fatalf("error reading config: %v", err)
 	}
-	err = config.SetUser(jsonData)
+	fmt.Printf("Read config: %v\n", cfg)
+
+	err = cfg.SetUser("sam")
+
+	cfg, err = config.Read()
 	if err != nil {
-		fmt.Printf("err")
+		log.Fatalf("error reading config: %v", err)
 	}
-	fmt.Printf("URL:%s ", jsonData.URL)
-	fmt.Printf("user:%s ", jsonData.CurrentUser)
+	fmt.Printf("Read config again: %v\n", cfg)
 }
