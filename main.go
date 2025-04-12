@@ -1,13 +1,18 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"os"
 
+	_ "github.com/lib/pq"
+
 	"github.com/samirhembrom/blogaggregator/internal/config"
+	"github.com/samirhembrom/blogaggregator/internal/database"
 )
 
 type state struct {
+	db  *database.Queries
 	cfg *config.Config
 }
 
@@ -19,6 +24,11 @@ func main() {
 	programState := &state{
 		cfg: &cfg,
 	}
+
+	db, err := sql.Open("postgres", programState.cfg.DBURL)
+
+	dbQueries := database.New(db)
+	programState.db = dbQueries
 
 	cmds := commands{
 		registeredCommands: make(map[string]func(*state, command) error),
