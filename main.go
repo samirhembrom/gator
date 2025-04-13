@@ -21,33 +21,32 @@ func main() {
 	if err != nil {
 		log.Fatalf("error reading config: %v", err)
 	}
-	programState := &state{
-		cfg: &cfg,
-	}
-
-	db, err := sql.Open("postgres", programState.cfg.DBURL)
+	db, err := sql.Open("postgres", cfg.DBURL)
 	if err != nil {
 		log.Fatalf("error db connection: %v", err)
 	}
 	defer db.Close()
-
 	dbQueries := database.New(db)
-	programState.db = dbQueries
+
+	programState := &state{
+		db:  dbQueries,
+		cfg: &cfg,
+	}
 
 	cmds := commands{
 		registeredCommands: make(map[string]func(*state, command) error),
 	}
+
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
 
-	args := os.Args
-	if len(args) < 2 {
+	if len(os.Args) < 2 {
 		log.Fatal("Usage: cli <command> [args...]")
 		return
 	}
 
-	cmdName := args[1]
-	cmdArgs := args[2:]
+	cmdName := os.Args[1]
+	cmdArgs := os.Args[2:]
 
 	err = cmds.run(programState, command{Name: cmdName, Args: cmdArgs})
 	if err != nil {

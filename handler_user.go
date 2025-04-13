@@ -17,14 +17,16 @@ func handlerLogin(s *state, cmd command) error {
 
 	name := cmd.Args[0]
 
-	existingUser, err := s.db.GetUser(context.Background(), name)
+	_, err := s.db.GetUser(context.Background(), name)
 	if err != nil {
-		return fmt.Errorf("a user with the name '%s' already exists %w", name, err)
+		return fmt.Errorf("couldn't find user: %w", err)
 	}
-	err = s.cfg.SetUser(existingUser.Name)
+
+	err = s.cfg.SetUser(name)
 	if err != nil {
 		return fmt.Errorf("couldn't set current user: %w", err)
 	}
+
 	fmt.Println("Username switched successful")
 	return nil
 }
@@ -36,22 +38,26 @@ func handlerRegister(s *state, cmd command) error {
 
 	name := cmd.Args[0]
 
-	userData := database.CreateUserParams{
+	user, err := s.db.CreateUser(context.Background(), database.CreateUserParams{
 		ID:        uuid.New(),
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
 		Name:      name,
-	}
-	user, err := s.db.CreateUser(context.Background(), userData)
+	})
 	if err != nil {
 		return fmt.Errorf("alread a user: %w", err)
 	}
 
-	err = s.cfg.SetUser(name)
+	err = s.cfg.SetUser(user.Name)
 	if err != nil {
 		return fmt.Errorf("couldn't set current user: %w", err)
 	}
 	fmt.Println("Username created successful")
-	fmt.Printf("Username switched successful %s\n", user.Name)
+	printUser(user)
 	return nil
+}
+
+func printUser(user database.User) {
+	fmt.Printf(" * ID: %v \n", user.ID)
+	fmt.Printf(" * Name: %v\n", user.Name)
 }
