@@ -10,16 +10,6 @@ import (
 	"github.com/samirhembrom/blogaggregator/internal/database"
 )
 
-func handlerReset(s *state, _ command) error {
-	err := s.db.DeleteUsers(context.Background())
-	if err != nil {
-		return fmt.Errorf("error deleteing rows: %w", err)
-	}
-
-	fmt.Printf("Reset was successful")
-	return nil
-}
-
 func handlerRegister(s *state, cmd command) error {
 	if len(cmd.Args) != 1 {
 		return fmt.Errorf("usage: %s <name>", cmd.Name)
