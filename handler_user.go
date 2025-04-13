@@ -10,24 +10,13 @@ import (
 	"github.com/samirhembrom/blogaggregator/internal/database"
 )
 
-func handlerLogin(s *state, cmd command) error {
-	if len(cmd.Args) != 1 {
-		return fmt.Errorf("usage: %s <name>", cmd.Name)
-	}
-
-	name := cmd.Args[0]
-
-	_, err := s.db.GetUser(context.Background(), name)
+func handlerReset(s *state, _ command) error {
+	err := s.db.DeleteUsers(context.Background())
 	if err != nil {
-		return fmt.Errorf("couldn't find user: %w", err)
+		return fmt.Errorf("error deleteing rows: %w", err)
 	}
 
-	err = s.cfg.SetUser(name)
-	if err != nil {
-		return fmt.Errorf("couldn't set current user: %w", err)
-	}
-
-	fmt.Println("Username switched successful")
+	fmt.Printf("Reset was successful")
 	return nil
 }
 
@@ -54,6 +43,27 @@ func handlerRegister(s *state, cmd command) error {
 	}
 	fmt.Println("Username created successful")
 	printUser(user)
+	return nil
+}
+
+func handlerLogin(s *state, cmd command) error {
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("usage: %s <name>", cmd.Name)
+	}
+
+	name := cmd.Args[0]
+
+	_, err := s.db.GetUser(context.Background(), name)
+	if err != nil {
+		return fmt.Errorf("couldn't find user: %w", err)
+	}
+
+	err = s.cfg.SetUser(name)
+	if err != nil {
+		return fmt.Errorf("couldn't set current user: %w", err)
+	}
+
+	fmt.Println("Username switched successful")
 	return nil
 }
 
