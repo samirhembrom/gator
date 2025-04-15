@@ -10,6 +10,26 @@ import (
 	"github.com/samirhembrom/blogaggregator/internal/database"
 )
 
+func handlerGetFeeds(s *state, _ command) error {
+	feeds, err := s.db.GetFeeds(context.Background())
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Successfull got feeds:")
+	for _, feed := range feeds {
+		fmt.Printf("Name: %s\n", feed.Name)
+		fmt.Printf("URL: %s\n", feed.Url)
+		user, err := s.db.GetUsersByID(context.Background(), feed.UserID)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("UserName: %s\n", user.Name)
+	}
+
+	return nil
+}
+
 func handlerAddFeed(s *state, cmd command) error {
 	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
 	if err != nil {
