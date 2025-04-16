@@ -7,5 +7,4 @@ name TEXT UNIQUE NOT NULL
 );
 
 -- +goose Down
-DROP TABLE feeds;
 DROP TABLE users;

@@ -10,6 +10,65 @@ import (
 	"github.com/samirhembrom/blogaggregator/internal/database"
 )
 
+func handlerListFeedFollow(s *state, cmd command) error {
+	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("error fetching user %w", err)
+	}
+	feeds, err := s.db.GetFeedFollowsForUser(context.Background(), user.ID)
+	if len(feeds) == 0 {
+		fmt.Printf("Not following any feeds %d", len(feeds))
+		return nil
+	}
+	for _, data := range feeds {
+		fmt.Printf("%+v\n", data)
+		feed, err := s.db.GetFeedUser(context.Background(), data.FeedID)
+		if err != nil {
+			fmt.Printf("Error retrieving feed\n")
+		}
+		printFeed(feed, user)
+	}
+
+	return nil
+}
+
+func handlerFeedFollow(s *state, cmd command) error {
+	if len(cmd.Args) != 1 {
+		return fmt.Errorf("Not enough args")
+	}
+
+	url := cmd.Args[0]
+	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+	if err != nil {
+		return fmt.Errorf("error fetching user %w", err)
+	}
+	feed, err := s.db.GetFeed(context.Background(), url)
+	if err != nil {
+		return fmt.Errorf("error fetching feed %w", err)
+	}
+
+	feed_follows, err := s.db.CreateFeedFollow(
+		context.Background(),
+		database.CreateFeedFollowParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			UserID:    user.ID,
+			FeedID:    feed.ID,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("error creating feed follow %w", err)
+	}
+
+	for _, data := range feed_follows {
+		printFeed(feed, user)
+		fmt.Printf("%+v\n", data)
+	}
+
+	return nil
+}
+
 func handlerListFeeds(s *state, _ command) error {
 	feeds, err := s.db.GetFeeds(context.Background())
 	if err != nil {
@@ -56,6 +115,20 @@ func handlerAddFeed(s *state, cmd command) error {
 	})
 	if err != nil {
 		return fmt.Errorf("error created feed: %w", err)
+	}
+
+	_, err = s.db.CreateFeedFollow(
+		context.Background(),
+		database.CreateFeedFollowParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			UserID:    user.ID,
+			FeedID:    feed.ID,
+		},
+	)
+	if err != nil {
+		return fmt.Errorf("error creating feed follow %w", err)
 	}
 
 	fmt.Println("Feed created successfull:")
