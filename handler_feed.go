@@ -34,11 +34,6 @@ func handlerListFeeds(s *state, _ command) error {
 }
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
-	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("Current user not found %w", err)
-	}
-
 	if len(cmd.Args) != 2 {
 		return fmt.Errorf("Not enough args")
 	}
