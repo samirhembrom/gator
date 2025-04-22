@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/samirhembrom/blogaggregator/internal/database"
 )
@@ -49,7 +52,27 @@ func scrapeFeed(db *database.Queries, feed database.Feed) {
 		return
 	}
 	for _, item := range feedData.Channel.Item {
-		fmt.Printf("Found post: %s\n", item.Title)
+		now, err := time.Parse("01/02 03:04:05PM '06 -0700", item.PubDate)
+		if err != nil {
+			log.Printf("Couldn't change feed %s: %v", feed.Name, err)
+		}
+		post, err := db.CreatePost(context.Background(), database.CreatePostParams{
+			ID:        uuid.New(),
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+			Title:     item.Title,
+			Url:       item.Link,
+			Description: sql.NullString{
+				Valid:  true,
+				String: item.Description,
+			},
+			PublishedAt: now,
+			FeedID:      feed.ID,
+		})
+		if err != nil {
+			log.Printf("Error creating post %v", err)
+		}
+		log.Printf("Created post successfully: %s", post.Title)
 	}
 	log.Printf("Feed %s collected, %v posts found", feed.Name, len(feedData.Channel.Item))
 }
