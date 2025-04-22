@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -52,11 +53,14 @@ func scrapeFeed(db *database.Queries, feed database.Feed) {
 		return
 	}
 	for _, item := range feedData.Channel.Item {
-		now, err := time.Parse("01/02 03:04:05PM '06 -0700", item.PubDate)
-		if err != nil {
-			log.Printf("Couldn't change feed %s: %v", feed.Name, err)
+		publishedAt := sql.NullTime{}
+		if t, err := time.Parse(time.RFC1123, item.PubDate); err != nil {
+			publishedAt = sql.NullTime{
+				Time:  t,
+				Valid: true,
+			}
 		}
-		post, err := db.CreatePost(context.Background(), database.CreatePostParams{
+		_, err := db.CreatePost(context.Background(), database.CreatePostParams{
 			ID:        uuid.New(),
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -66,13 +70,16 @@ func scrapeFeed(db *database.Queries, feed database.Feed) {
 				Valid:  true,
 				String: item.Description,
 			},
-			PublishedAt: now,
+			PublishedAt: publishedAt,
 			FeedID:      feed.ID,
 		})
 		if err != nil {
-			log.Printf("Error creating post %v", err)
+			if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+				continue
+			}
+			log.Printf("Couldn't create post: %v", err)
+			continue
 		}
-		log.Printf("Created post successfully: %s", post.Title)
 	}
 	log.Printf("Feed %s collected, %v posts found", feed.Name, len(feedData.Channel.Item))
 }
